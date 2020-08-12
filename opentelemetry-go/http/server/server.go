@@ -66,34 +66,49 @@ func initProvider(otlAgentAddr *string) {
 	global.SetTraceProvider(tp)
 }
 
-func main() {
-	otlAgentAddr := flag.String("otlagent", "0.0.0.0:55680", "Opentelemetry agent endpoint")
-	flag.Parse()
-	initProvider(otlAgentAddr)
-	tr := global.Tracer("example/server")
+func helloHandler(w http.ResponseWriter, req *http.Request) {
+      tracer := global.TraceProvider().Tracer("example/server")
 
-	helloHandler := func(w http.ResponseWriter, req *http.Request) {
-		attrs, entries, spanCtx := httptrace.Extract(req.Context(), req)
+       // Extracts the conventional HTTP span attributes,
+       // distributed context tags, and a span context for
+       // tracing this request.
+       attrs, entries, spanCtx := httptrace.Extract(req.Context(), req)
+       ctx := req.Context()
+       if spanCtx.IsValid() {
+             ctx = trace.ContextWithRemoteSpanContext(ctx, spanCtx)
+       }
 
-		req = req.WithContext(correlation.ContextWithMap(req.Context(), correlation.NewMap(correlation.MapUpdate{
-			MultiKV: entries,
-		})))
+       // Apply the correlation context tags to the request
+       // context.
+       req = req.WithContext(correlation.ContextWithMap(ctx, correlation.NewMap(correlation.MapUpdate{
+             MultiKV: entries,
+       })))
 
-		ctx, span := tr.Start(
-			trace.ContextWithRemoteSpanContext(req.Context(), spanCtx),
-			"hello",
-			trace.WithAttributes(attrs...),
-		)
-		defer span.End()
+       // Start the server-side span, passing the remote
+       // child span context explicitly.
+       _, span := tracer.Start(
+             req.Context(),
+             "hello",
+             trace.WithAttributes(attrs...),
+       )
+       defer span.End()
 
-		span.AddEvent(ctx, "handling this...")
+       // Add event
+       span.AddEvent(ctx, "handling this...")
 
-		_, _ = io.WriteString(w, "Hello, world!\n")
-	}
-
-	http.HandleFunc("/hello", helloHandler)
-	err := http.ListenAndServe(":7777", nil)
-	if err != nil {
-		panic(err)
-	}
+       io.WriteString(w, "Hello, world!\n")
 }
+
+func main() {
+      otlAgentAddr := flag.String("otlagent", "0.0.0.0:55680", "Opentelemetry agent endpoint")
+      flag.Parse()
+      initProvider(otlAgentAddr)
+
+      http.HandleFunc("/hello", helloHandler)
+      err := http.ListenAndServe(":7777", nil)
+      if err != nil {
+            panic(err)
+      }
+}
+
+

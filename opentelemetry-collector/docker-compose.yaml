@@ -1,0 +1,43 @@
+version: "3.1"
+services:
+  prometheus:
+    image: "prom/prometheus"
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yaml:/etc/prometheus/prometheus.yml
+    networks:
+      - example
+
+  metrics-load-generator:
+    container_name: demo
+    image: demo:latest
+    build:
+      dockerfile: $PWD/Dockerfile
+      context: $PWD
+    command: ["/usr/local/bin/main", "-otlagent", "otel-agent:55678"]
+    networks:
+      - example
+    depends_on:
+      - otel-agent
+      - prometheus
+
+  otel-agent:
+    container_name: agent
+    image: otel/opentelemetry-collector
+    command: ["--config=/etc/otel-local-config.yaml"]
+    volumes:
+      - ./otel-local-config.yaml:/etc/otel-local-config.yaml
+    ports:
+      - "55679:55679" # zpages extension
+      - "55678:55678" # OpenCensus receiver
+      - "13133:13133" # health_check
+      - "8889:8889"   # Prometheus exporter metrics
+      - "8888:8888"   # Prometheus exporter metrics
+    depends_on:
+      - prometheus
+    networks:
+      - example
+
+networks:
+  example:

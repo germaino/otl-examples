@@ -1,0 +1,74 @@
+# Copyright The OpenTelemetry Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+version: "3.7"
+services:
+
+  # Jaeger
+  jaeger-all-in-one:
+    image: jaegertracing/all-in-one:latest
+    ports:
+      - "16686:16686"
+      - "14268"
+      - "14250"
+    networks:
+      - example
+
+  # Zipkin
+  zipkin-all-in-one:
+    image: openzipkin/zipkin:latest
+    ports:
+      - "9411:9411"
+    networks:
+      - example
+
+  prometheus:
+    image: "prom/prometheus"
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yaml:/etc/prometheus/prometheus.yml
+    networks:
+      - example
+
+  demo:
+    container_name: demo
+    image: demo:latest
+    build:
+      dockerfile: $PWD/Dockerfile
+      context: $PWD
+    command: ["/usr/local/bin/main", "-otlagent", "otel-agent:30080"]
+    networks:
+      - example
+    depends_on:
+      - otel-agent
+
+  otel-agent:
+    container_name: agent
+    image: otel/opentelemetry-collector
+    command: ["--config=/etc/otel-local-config.yaml"]
+    volumes:
+      - ./otel-local-config.yaml:/etc/otel-local-config.yaml
+    ports:
+      - "55679:55679" # zpages extension
+      - "13133:13133" # health_check
+      - "8889:8889"   # Prometheus exporter metrics
+      - "8888:8888"   # Prometheus exporter metrics
+      - "30080:30080" # OpenTelemtry receiver
+    networks:
+      - example
+    depends_on:
+      - prometheus
+
+networks:
+  example:

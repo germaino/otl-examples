@@ -1,0 +1,4 @@
+firefox http://localhost:9411/zipkin
+firefox http://localhost:16686
+curl http://localhost:8888/metrics
+curl http://localhost:8889/metrics

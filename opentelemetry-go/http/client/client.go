@@ -24,10 +24,8 @@ import (
 	"google.golang.org/grpc"
 
 	"go.opentelemetry.io/otel/api/kv"
-        "go.opentelemetry.io/otel/api/metric"
 	"go.opentelemetry.io/otel/api/standard"
 	"go.opentelemetry.io/otel/api/trace"
-        apitrace "go.opentelemetry.io/otel/api/trace"
 
 	"net/http"
 	"time"
@@ -35,8 +33,6 @@ import (
 	"go.opentelemetry.io/otel/api/correlation"
 	"go.opentelemetry.io/otel/api/global"
 	"go.opentelemetry.io/otel/exporters/otlp"
-        "go.opentelemetry.io/otel/sdk/metric/controller/push"
-	"go.opentelemetry.io/otel/sdk/metric/selector/simple"
 	"go.opentelemetry.io/otel/instrumentation/httptrace"
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
@@ -76,14 +72,7 @@ func initProvider(otlAgentAddr *string) {
 	    sdktrace.WithBatcher(exporter))
 	handleErr(err, "failed to create trace provider")
 
-        pusher := push.New(
-		simple.NewWithExactDistribution(),
-		exporter,
-		push.WithPeriod(2*time.Second),
-	)
 	global.SetTraceProvider(tp)
-        global.SetMeterProvider(pusher.Provider())
-        pusher.Start()
 }
 
 func sayHello1(url *string) {
@@ -96,28 +85,7 @@ func sayHello1(url *string) {
   var body []byte
 
   tracer := global.Tracer("client/server")
-  meter := global.Meter("test-meter")
 
-  fmt.Printf("Sending metrics\n\n\n")
-  // labels represent additional key-value descriptors that can be bound to a
-  // metric observer or recorder.
-  commonLabels := []kv.KeyValue{
-      kv.String("labelA", "chocolate"),
-      kv.String("labelB", "raspberry"),
-      kv.String("labelC", "vanilla"),
-  }
-
-  // Recorder metric example
-  valuerecorder := metric.Must(meter).
-	  NewFloat64Counter(
-		"an_important_metric",
-		metric.WithDescription("Measures the cumulative epicness of the app"),
-	  ).Bind(commonLabels...)
-  for i := 0; i < 10; i++ {
-    log.Printf("Doing really hard work (%d / 10)\n", i+1)
-    valuerecorder.Add(ctx, 1.0)
-    time.Sleep(time.Second)
-  }
   fmt.Printf("Trace an HTTP request\n\n\n")
 
   err := tracer.WithSpan(ctx, "say hello1",
@@ -152,51 +120,8 @@ func sayHello1(url *string) {
     log.Printf("Done!")
 }
 
-func sayHello2() {
 
-  tracer := global.Tracer("ex.com/basic")
-  fmt.Printf("Creating child spans\n\n\n")
-
-  tracer.WithSpan(context.Background(), "foo",
-    func(ctx context.Context) error {
-      tracer.WithSpan(ctx, "bar",
-        func(ctx context.Context) error {
-          tracer.WithSpan(ctx, "baz",
-            func(ctx context.Context) error {
-              return nil
-            },
-          )
-          return nil
-        },
-      )
-      return nil
-    },
-  )
-  log.Printf("Done!")
-}
-
-func sayHello3() {
-  fmt.Printf("Creating span\n\n\n")
-  tracer := global.Tracer("toto")
-  ctx, span := tracer.Start(context.Background(), "run")
-  span.SetAttributes(kv.String("platform", "osx"))
-  span.SetAttributes(kv.String("version", "1.2.3"))
-  fmt.Printf("Add span event\n\n\n")
-  span.AddEvent(ctx, "event in foo", kv.String("name", "foo1"))
-
-  attributes := []kv.KeyValue{
-   kv.String("platform", "osx"),
-   kv.String("version", "1.2.3"),
-  }
-
-  ctx, child := tracer.Start(ctx, "baz", apitrace.WithAttributes(attributes...))
-  child.End()
-  log.Printf("Done!")
-  span.End()
-}
-
-
-func sayHello4(url *string) {
+func sayHello2(url *string) {
 
   client := http.DefaultClient
   ctx := correlation.NewContext(context.Background(),
@@ -208,7 +133,7 @@ func sayHello4(url *string) {
   tracer := global.Tracer("example/client")
   fmt.Printf("Trace an HTTP request\n\n\n")
 
-  ctx, span := tracer.Start(context.Background(), "say hello4")
+  ctx, span := tracer.Start(context.Background(), "say hello2")
   req, _ := http.NewRequest("GET", *url, nil)
   ctx, req = httptrace.W3C(ctx, req)
   httptrace.Inject(ctx, req)
@@ -241,9 +166,7 @@ func main() {
   initProvider(otlAgentAddr)
 
   sayHello1(url)
-  //sayHello2()
-  //sayHello3()
-  sayHello4(url)
+  sayHello2(url)
 
 
 }

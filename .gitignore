@@ -1,0 +1,5 @@
+opentelemetry-go/http/client/client
+opentelemetry-go/http/server/server
+opentelemetry-go/otel-collector/main
+opentelemetry-collector/main
+opentelemetry-collector/demo/main

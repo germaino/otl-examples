@@ -51,6 +51,8 @@ services:
     command: ["/usr/local/bin/main", "-otlagent", "otel-agent:55680"]
     networks:
       - example
+    ports:
+      - "7777:7777"
     depends_on:
       - otel-agent
 

@@ -20,7 +20,7 @@ exporters:
     logLevel: debug
   prometheus:
     endpoint: "0.0.0.0:8889"
-    namespace: "testapp"
+    namespace: "demoapp"
   zipkin:
     endpoint: "http://zipkin-all-in-one:9411/api/v2/spans"
     format: proto

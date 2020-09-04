@@ -18,42 +18,31 @@ receivers:
         static_configs:
         - targets: ['0.0.0.0:8888']
 
-  jaeger:
-    protocols:
-      grpc:
-      thrift_binary:
-      thrift_compact:
-      thrift_http:
-
-  zipkin:
-
-processors:
-  batch:
-  queued_retry:
-
 exporters:
   logging:
     logLevel: debug
 
   prometheus:
     endpoint: "0.0.0.0:8889"
-    namespace: "testapp"
+    namespace: "demoapp"
 
   jaeger:
     endpoint: jaeger-all-in-one:14250
     insecure: true
 
-service:
-  pipelines:
+processors:
+  batch:
+  queued_retry:
 
+service:
+  extensions: [health_check, pprof, zpages]
+  pipelines:
     traces:
       receivers: [opencensus, jaeger, zipkin]
       processors: [batch, queued_retry]
       exporters: [logging, jaeger]
-
     metrics:
       receivers: [opencensus, prometheus]
       processors: [batch]
       exporters: [logging, prometheus]
 
-  extensions: [health_check, pprof, zpages]

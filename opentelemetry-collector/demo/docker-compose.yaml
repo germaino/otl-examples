@@ -21,6 +21,7 @@ services:
 
   # Collector
   otel-collector:
+    container_name: otel-col
     image: ${OTELCOL_IMG}
     command: ["--config=/etc/otel-collector-config.yaml", "${OTELCOL_ARGS}"]
     volumes:
@@ -40,7 +41,7 @@ services:
 
   # Agent
   otel-agent:
-    container_name: agent
+    container_name: otel-agent
     image: ${OTELCOL_IMG}
     command: ["--config=/etc/otel-agent-config.yaml", "${OTELCOL_ARGS}"]
     volumes:
@@ -79,7 +80,7 @@ services:
 
   metrics-load-generator:
     container_name: demo
-    image: demo:latest
+    image: demo-otl-collector-std:latest
     command: ["/usr/local/bin/main", "-otlagent", "otel-agent:55678"]
     build:
       dockerfile: $PWD/Dockerfile

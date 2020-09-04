@@ -9,6 +9,16 @@ services:
     networks:
       - example
 
+  # Jaeger
+  jaeger-all-in-one:
+    image: jaegertracing/all-in-one:latest
+    ports:
+      - "16686:16686"
+      - "14268"
+      - "14250"
+    networks:
+      - example
+
   metrics-load-generator:
     container_name: demo
     image: demo-otl-collector-std:latest
@@ -21,6 +31,7 @@ services:
     depends_on:
       - otel-agent
       - prometheus
+      - jaeger-all-in-one
 
   otel-agent:
     container_name: agent

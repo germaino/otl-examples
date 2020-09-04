@@ -1,55 +1,59 @@
-   extensions:
-     health_check:
-     pprof:
-       endpoint: 0.0.0.0:1777
-     zpages:
-       endpoint: 0.0.0.0:55679
+extensions:
+  health_check:
+  pprof:
+    endpoint: 0.0.0.0:1777
+  zpages:
+    endpoint: 0.0.0.0:55679
 
-   receivers:
+receivers:
 
-     opencensus:
+  opencensus:
 
-     # Collect own metrics
-     prometheus:
-       config:
-         scrape_configs:
-         - job_name: 'otel-collector'
-           scrape_interval: 10s
-           static_configs:
-           - targets: ['0.0.0.0:8888']
+  # Collect own metrics
+  prometheus:
+    config:
+      scrape_configs:
+      - job_name: 'otel-collector'
+        scrape_interval: 10s
+        static_configs:
+        - targets: ['0.0.0.0:8888']
 
-     jaeger:
-       protocols:
-         grpc:
-         thrift_binary:
-         thrift_compact:
-         thrift_http:
+  jaeger:
+    protocols:
+      grpc:
+      thrift_binary:
+      thrift_compact:
+      thrift_http:
 
-     zipkin:
+  zipkin:
 
-   processors:
-     batch:
-     queued_retry:
+processors:
+  batch:
+  queued_retry:
 
-   exporters:
-     logging:
-       logLevel: debug
-     prometheus:
-       endpoint: "0.0.0.0:8889"
-       namespace: "testapp"
+exporters:
+  logging:
+    logLevel: debug
 
-   service:
+  prometheus:
+    endpoint: "0.0.0.0:8889"
+    namespace: "testapp"
 
-     pipelines:
+  jaeger:
+    endpoint: jaeger-all-in-one:14250
+    insecure: true
 
-       traces:
-         receivers: [opencensus, jaeger, zipkin]
-         processors: [batch, queued_retry]
-         exporters: [logging]
+service:
+  pipelines:
 
-       metrics:
-         receivers: [opencensus, prometheus]
-         processors: [batch]
-         exporters: [logging, prometheus]
+    traces:
+      receivers: [opencensus, jaeger, zipkin]
+      processors: [batch, queued_retry]
+      exporters: [logging, jaeger]
 
-     extensions: [health_check, pprof, zpages]
+    metrics:
+      receivers: [opencensus, prometheus]
+      processors: [batch]
+      exporters: [logging, prometheus]
+
+  extensions: [health_check, pprof, zpages]

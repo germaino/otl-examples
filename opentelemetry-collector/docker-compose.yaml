@@ -11,7 +11,7 @@ services:
 
   metrics-load-generator:
     container_name: demo
-    image: demo:latest
+    image: demo-otl-collector-std:latest
     build:
       dockerfile: $PWD/Dockerfile
       context: $PWD

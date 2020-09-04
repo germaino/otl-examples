@@ -1,8 +1,7 @@
 
 build:
 	go build main.go
-	#go build demoapp.go
-	docker build -t demo:latest .
+	docker build -t demo-otl-collector-std:latest .
 
 start:
 	docker-compose up -d

@@ -1,0 +1,67 @@
+
+receivers:
+  jaeger:
+    protocols:
+      thrift_http:
+  otlp:
+    protocols:
+      grpc:
+      http:
+
+  prometheus:
+    config:
+      scrape_configs:
+      - job_name: 'demoapp'
+        scrape_interval: 5s
+        scrape_timeout: 5s
+        static_configs:
+        - targets:
+          - demoapp:24231
+          labels:
+            app: demopp
+      - job_name: 'otel'
+        scrape_interval: 5s
+        scrape_timeout: 5s
+        static_configs:
+        - targets:
+          - localhost:8888
+          labels:
+            app: otel
+
+exporters:
+  prometheus:
+    endpoint: "0.0.0.0:24231"
+    namespace: ''
+    const_labels:
+      collector: otel
+
+  logging:
+    logLevel: debug
+    sampling_initial: 10
+    sampling_thereafter: 20
+
+  jaeger:
+    endpoint: jaeger-all-in-one:14250
+    insecure: true
+
+  azuremonitor:
+    instrumentation_key: {{APP_INSIGHT_INSTRUMENTATION_KEY}}
+
+processors:
+  batch:
+  queued_retry:
+
+extensions:
+  health_check:
+
+service:
+  extensions: [health_check]
+  pipelines:
+    traces:
+      receivers: [jaeger, otlp]
+      processors: [batch, queued_retry]
+      exporters: [logging, jaeger, azuremonitor]
+    metrics:
+      receivers: [prometheus, otlp]
+      processors: [batch]
+      exporters: [logging, prometheus]

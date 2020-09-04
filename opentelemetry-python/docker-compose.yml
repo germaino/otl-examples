@@ -1,0 +1,68 @@
+version: "3.1"
+services:
+
+  # Jaeger
+  jaeger-all-in-one:
+    container_name: jaeger
+    image: jaegertracing/all-in-one:latest
+    ports:
+      - "16686:16686"
+      - "14268"
+      - "14250"
+      - "6831"
+    networks:
+      - example
+
+  # Collector
+  otel-collector:
+    container_name: otelc
+    #image: otel/opentelemetry-collector-dev:latest
+    image: otel/opentelemetry-collector-contrib:latest
+    command: ["--config=/etc/otel-collector-config.yaml", "${OTELCOL_ARGS}"]
+    volumes:
+      - /tmp/otel-collector-config.yaml:/etc/otel-collector-config.yaml
+    ports:
+      - "55680"       # OTLP metrics and traces
+      - "24231"       # Prometheus metrics exposed by the demoapp
+      - "13133:13133" # health_check extension
+      - "8000:8001"
+    depends_on:
+      - jaeger-all-in-one
+    networks:
+      - example
+
+  demoapp:
+    container_name: demoapp
+    image: demoapp/demoapp-log
+        #command: ["--metric-exporter", "prometheus", "--trace-exporter", "jaeger", "--otlp-metric-exporter-url", "jaeger-all-in-one"]
+        #otl collector for metrics not yet supported in 0.12
+        #command: ["--metric-exporter", "otl_collector", "--trace-exporter", "otl_collector", "", ""]
+        #command: ["--metric-exporter", "prometheus", "--trace-exporter", "otl_collector", "--otlp-metric-exporter-url", "otel-collector:55680"]
+    command: ["--metric-exporter", "prometheus", "--trace-exporter", "otl_collector", "--otlp-trace-exporter-url", "otel-collector:55680"]
+    entrypoint:
+      - python3
+      - /app/demoapp.py
+    ports:
+      - "6831"
+      - "24231:24231"
+      - "5000:5000"
+    networks:
+      - example
+    depends_on:
+      - jaeger-all-in-one
+      - prometheus
+      - otel-collector
+
+  prometheus:
+    image: "prom/prometheus"
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yaml:/etc/prometheus/prometheus.yml
+    networks:
+      - example
+
+
+networks:
+  example:
+

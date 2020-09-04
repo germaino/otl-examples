@@ -49,7 +49,7 @@ services:
       - SampleApp__ApplicationInsightsInstrumentationKey=${AI_INSTRUMENTATIONKEY-}
       - SampleApp__ApplicationInsightsForOpenTelemetryInstrumentationKey=${AI_INSTRUMENTATIONKEY_OPENTELEMETRY-}
       - SqlConnectionString=server=sqlserver;user id=sa;password=Pass@Word1;
-      - OpenTelemetry__Jaeger__AgentHost=${JAEGER_AGENTHOST-jaeger}    
+      - OpenTelemetry__Jaeger__AgentHost=${JAEGER_AGENTHOST-jaeger}
     depends_on:
       - sqlserver
       - prometheus
@@ -82,19 +82,19 @@ services:
     - 5778:5778
     - 16686:16686
     - 14268:14268
-    - 19411:19411    
+    - 19411:19411
 
   prometheus:
     image: prom/prometheus
-    volumes: 
+    volumes:
       - ../../prometheus.yml:/etc/prometheus/prometheus.yml
-    command: 
+    command:
       - '--config.file=/etc/prometheus/prometheus.yml'
     ports:
         - 9090:9090
   grafana:
     image: grafana/grafana
-    environment: 
+    environment:
       - GF_SECURITY_ADMIN_PASSWORD=password1
     depends_on:
       - prometheus

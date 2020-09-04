@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using OpenTelemetry.Collector;
 using OpenTelemetry.Trace;
 

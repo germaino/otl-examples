@@ -8,7 +8,6 @@ Demonstrate trace context propagation inside and across processes
 Original code: from [Github](https://github.com/open-telemetry/opentelemetry-go/sample/http)
 
 The example has disappear from the latest release
-![use case](./docs/otel-collector-std.png)
 ![use case](./docs/go-example-http.png)
 
 # Build
